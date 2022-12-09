@@ -20,11 +20,10 @@ fn index() -> RawHtml<String>
     let template = std::fs::read_to_string(&template_path)
             .unwrap_or_else(|e| format!("Error loading '{template_path}' : {e}"));
 
-    page_content.push_str("<script>\ncard = {};\n");
-    for (k, v) in card.fields.iter() {
-        let line = format!("card[\"{k}\"] = \"{v}\"\n");
-        page_content.push_str(&line);
-    }
+    page_content.push_str("<script>\n");
+
+    page_content.push_str(&card.to_javascript_object(Some("card")));
+
     page_content.push_str("</script>\n");
 
     page_content.push_str(&template);
@@ -60,4 +59,32 @@ impl Card {
     {
         self.fields.get(key)
     }
+
+    pub fn to_javascript_object(&self, variable_name: Option<&str>) -> String
+    {
+        let mut result = String::new();
+
+        if let Some(varname) = variable_name {
+            result.push_str(&format!("var {varname} = "));
+        }
+
+        result.push('{');
+        let mut is_first = true;
+        for (k, v) in self.fields.iter() {
+            if !is_first {
+                result.push(',');
+            }
+
+            result.push_str(&format!("\"{k}\":\"{v}\""));
+            is_first = false;
+        }
+        result.push('}');
+
+        if let Some(_) = variable_name {
+            result.push_str(";\n");
+        }
+
+        result
+    }
 }
+
