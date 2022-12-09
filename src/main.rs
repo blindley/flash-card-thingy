@@ -14,22 +14,22 @@ fn index() -> RawHtml<String>
     note.set_field("front", "Front of Card");
     note.set_field("back", "Back of Card");
 
-    let mut page = String::new();
+    let mut page_content = String::new();
 
-    let p = format!("data/templates/{}.html", note.get_field("template").unwrap());
-    let template = std::fs::read_to_string(&p)
-            .unwrap_or_else(|e| format!("Error loading '{p}' : {e}"));
+    let template_path = format!("data/templates/{}.html", note.get_field("template").unwrap());
+    let template = std::fs::read_to_string(&template_path)
+            .unwrap_or_else(|e| format!("Error loading '{template_path}' : {e}"));
 
-    page.push_str("<script>\ncard = {};\n");
+    page_content.push_str("<script>\ncard = {};\n");
     for (k, v) in note.fields.iter() {
         let line = format!("card[\"{k}\"] = \"{v}\"\n");
-        page.push_str(&line);
+        page_content.push_str(&line);
     }
-    page.push_str("</script>\n");
+    page_content.push_str("</script>\n");
 
-    page.push_str(&template);
+    page_content.push_str(&template);
 
-    RawHtml(page)
+    RawHtml(page_content)
 }
 
 struct Note {
