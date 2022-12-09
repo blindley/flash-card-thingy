@@ -10,18 +10,18 @@ fn rocket() -> _ {
 #[get("/")]
 fn index() -> RawHtml<String>
 {
-    let mut note = Note::new("basic");
-    note.set_field("front", "Front of Card");
-    note.set_field("back", "Back of Card");
+    let mut card = Card::new("basic");
+    card.set_field("front", "Front of Card");
+    card.set_field("back", "Back of Card");
 
     let mut page_content = String::new();
 
-    let template_path = format!("data/templates/{}.html", note.get_field("template").unwrap());
+    let template_path = format!("data/templates/{}.html", card.get_field("template").unwrap());
     let template = std::fs::read_to_string(&template_path)
             .unwrap_or_else(|e| format!("Error loading '{template_path}' : {e}"));
 
     page_content.push_str("<script>\ncard = {};\n");
-    for (k, v) in note.fields.iter() {
+    for (k, v) in card.fields.iter() {
         let line = format!("card[\"{k}\"] = \"{v}\"\n");
         page_content.push_str(&line);
     }
@@ -32,18 +32,18 @@ fn index() -> RawHtml<String>
     RawHtml(page_content)
 }
 
-struct Note {
+struct Card {
     fields: std::collections::HashMap<String, String>,
 }
 
-impl Note {
-    pub fn new<S>(template: S) -> Note
+impl Card {
+    pub fn new<S>(template: S) -> Card
         where S: Into<String>
     {
         let mut fields = std::collections::HashMap::new();
         fields.insert("template".into(), template.into());
 
-        Note {
+        Card {
             fields,
         }
     }
