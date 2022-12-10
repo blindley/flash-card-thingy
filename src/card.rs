@@ -6,31 +6,27 @@ use std::cmp::Ord;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct Card {
-    fields: BTreeMap<String, String>,
-}
+pub struct Card(BTreeMap<String, String>);
 
 impl Card {
     pub fn new() -> Card
     {
         let fields = BTreeMap::new();
 
-        Card {
-            fields,
-        }
+        Card(fields)
     }
 
     pub fn set_field<K, V>(&mut self, key: K, value: V)
         where K: Into<String>, V: Into<String>
     {
-        self.fields.insert(key.into(), value.into());
+        self.0.insert(key.into(), value.into());
     }
 
     pub fn get_field<Q>(&self, key: &Q) -> Option<&String>
         where String: std::borrow::Borrow<Q>,
             Q: Ord + ?Sized
     {
-        self.fields.get(key)
+        self.0.get(key)
     }
 
     pub fn to_javascript_object(&self, variable_name: Option<&str>) -> String
@@ -43,7 +39,7 @@ impl Card {
 
         result.push('{');
         let mut is_first = true;
-        for (k, v) in self.fields.iter() {
+        for (k, v) in self.0.iter() {
             if !is_first {
                 result.push(',');
             }
