@@ -22,8 +22,7 @@ fn index() -> RawHtml<String>
 fn card_by_index(index: usize) -> RawHtml<String>
 {
     let deck_path = "data/decks/sample.json";
-    let deck_json = std::fs::read_to_string(deck_path).unwrap();
-    let deck: Deck = serde_json::from_str(&deck_json).unwrap();
+    let deck = Deck::load(deck_path).unwrap();
 
     if index < deck.cards.len() {
         let card = &deck.cards[index];
