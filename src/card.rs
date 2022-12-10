@@ -1,4 +1,5 @@
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Card {
     fields: std::collections::HashMap<String, String>,
 }
@@ -53,6 +54,23 @@ impl Card {
         }
 
         result
+    }
+
+    pub fn to_html(&self) -> String
+    {
+        let mut page_content = String::new();
+
+        page_content.push_str("<script>\n");
+        page_content.push_str(&self.to_javascript_object(Some("card")));
+        page_content.push_str("</script>\n");
+
+        let template_path = format!("data/templates/{}.html", self.get_field("template").unwrap());
+        let template = std::fs::read_to_string(&template_path)
+                .unwrap_or_else(|e| format!("Error loading '{template_path}' : {e}"));
+
+        page_content.push_str(&template);
+
+        page_content
     }
 }
 
