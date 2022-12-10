@@ -2,24 +2,35 @@
 use rocket::response::content::RawHtml;
 
 mod card;
-use card::Card;
-
 mod deck;
+
+use deck::Deck;
 
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+    rocket::build().mount("/", routes![index, card_by_index])
 }
 
 #[get("/")]
 fn index() -> RawHtml<String>
 {
-    let mut card = Card::new();
-    card.set_field("front", "Front of Card");
-    card.set_field("back", "Back of Card");
+    card_by_index(0)
+}
 
-    let page_content = card.to_html();
+#[get("/<index>")]
+fn card_by_index(index: usize) -> RawHtml<String>
+{
+    let deck_path = "data/decks/sample.json";
+    let deck_json = std::fs::read_to_string(deck_path).unwrap();
+    let deck: Deck = serde_json::from_str(&deck_json).unwrap();
 
-    RawHtml(page_content)
+    if index < deck.cards.len() {
+        let card = &deck.cards[index];
+        let page_content = card.to_html();
+        RawHtml(page_content)
+    } else {
+        let content = "<h1>ERROR: card does not exist</h1>";
+        RawHtml(content.into())
+    }
 }

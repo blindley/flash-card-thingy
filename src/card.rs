@@ -1,7 +1,11 @@
+#![allow(dead_code)]
+
 use std::collections::BTreeMap;
 use std::cmp::Ord;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Card {
     fields: BTreeMap<String, String>,
 }
@@ -9,7 +13,7 @@ pub struct Card {
 impl Card {
     pub fn new() -> Card
     {
-        let mut fields = BTreeMap::new();
+        let fields = BTreeMap::new();
 
         Card {
             fields,
