@@ -4,6 +4,8 @@ use rocket::response::content::RawHtml;
 mod card;
 use card::Card;
 
+mod deck;
+
 
 #[launch]
 fn rocket() -> _ {
@@ -13,7 +15,7 @@ fn rocket() -> _ {
 #[get("/")]
 fn index() -> RawHtml<String>
 {
-    let mut card = Card::new("basic");
+    let mut card = Card::new();
     card.set_field("front", "Front of Card");
     card.set_field("back", "Back of Card");
 

@@ -1,15 +1,15 @@
+use std::collections::BTreeMap;
+use std::cmp::Ord;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Card {
-    fields: std::collections::HashMap<String, String>,
+    fields: BTreeMap<String, String>,
 }
 
 impl Card {
-    pub fn new<S>(template: S) -> Card
-        where S: Into<String>
+    pub fn new() -> Card
     {
-        let mut fields = std::collections::HashMap::new();
-        fields.insert("template".into(), template.into());
+        let mut fields = BTreeMap::new();
 
         Card {
             fields,
@@ -24,7 +24,7 @@ impl Card {
 
     pub fn get_field<Q>(&self, key: &Q) -> Option<&String>
         where String: std::borrow::Borrow<Q>,
-            Q: std::hash::Hash + Eq + ?Sized
+            Q: Ord + ?Sized
     {
         self.fields.get(key)
     }
@@ -64,7 +64,10 @@ impl Card {
         page_content.push_str(&self.to_javascript_object(Some("card")));
         page_content.push_str("</script>\n");
 
-        let template_path = format!("data/templates/{}.html", self.get_field("template").unwrap());
+        let template = self.get_field("template")
+            .and_then(|v| Some(v.as_str()))
+            .unwrap_or("basic");
+        let template_path = format!("data/templates/{}.html", template);
         let template = std::fs::read_to_string(&template_path)
                 .unwrap_or_else(|e| format!("Error loading '{template_path}' : {e}"));
 
@@ -74,3 +77,26 @@ impl Card {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::Card;
+
+    #[test]
+    fn test_to_javascript_object()
+    {
+        let card = Card::new();
+        assert_eq!(card.to_javascript_object(None), "{}");
+
+        let mut card = Card::new();
+        card.set_field("template", "basic-plus");
+        card.set_field("front", "This is the front.");
+        card.set_field("back", "This is the back.");
+        assert_eq!(
+            card.to_javascript_object(Some("card")),
+            concat!(
+                r#"var card = {"back":"This is the back.","front":"This is the front.","template":"basic-plus"};"#,
+                "\n"
+            )
+        );
+    }
+}
