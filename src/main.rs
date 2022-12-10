@@ -9,7 +9,10 @@ use deck::Deck;
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, card_by_index])
+    let figment = rocket::Config::figment()
+         .merge(("port", 8080));
+    rocket::custom(figment)
+        .mount("/", routes![index, card_by_index])
 }
 
 #[get("/")]
