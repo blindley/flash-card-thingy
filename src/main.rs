@@ -3,9 +3,13 @@ use rocket::response::content::RawHtml;
 
 mod card;
 mod deck;
+mod progress;
 
 use deck::Deck;
 
+struct AppData {
+
+}
 
 #[launch]
 fn rocket() -> _ {
@@ -18,7 +22,27 @@ fn rocket() -> _ {
 #[get("/")]
 fn index() -> RawHtml<String>
 {
-    card_by_index(0)
+    let name_of_this_app = "pending...";
+
+    let mut lines: Vec<String> = Vec::new();
+    lines.push("<!DOCTYPE html>".into());
+    lines.push("<html>".into());
+    lines.push(format!("<head><title>{}</title></head>", name_of_this_app));
+    lines.push("<body>".into());
+
+    let url = "/0";
+    let deck_name = "sample-deck";
+    lines.push(format!("<a href=\"{url}\">{deck_name}</a>"));
+
+    lines.push("</body>".into());
+    lines.push("</html>".into());
+
+    let mut html = String::new();
+    for line in lines.iter() {
+        html.push_str(&line);
+        html.push('\n');
+    }
+    return RawHtml(html)
 }
 
 #[get("/<index>")]
