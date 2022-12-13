@@ -6,14 +6,14 @@ use std::cmp::Ord;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct Card(BTreeMap<String, String>);
+pub struct Note(BTreeMap<String, String>);
 
-impl Card {
-    pub fn new() -> Card
+impl Note {
+    pub fn new() -> Note
     {
         let fields = BTreeMap::new();
 
-        Card(fields)
+        Note(fields)
     }
 
     pub fn get_uuid(&self) -> uuid::Uuid
@@ -81,15 +81,15 @@ impl Card {
 
 #[cfg(test)]
 mod test {
-    use super::Card;
+    use super::Note;
 
     #[test]
     fn test_to_javascript_object()
     {
-        let card = Card::new();
+        let card = Note::new();
         assert_eq!(card.to_javascript_object(None, 1), r#"{"instance":1}"#);
 
-        let mut card = Card::new();
+        let mut card = Note::new();
         card.set_field("template", "basic-plus");
         card.set_field("front", "This is the front.");
         card.set_field("back", "This is the back.");

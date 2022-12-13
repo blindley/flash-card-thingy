@@ -1,10 +1,10 @@
 use serde::{Serialize, Deserialize};
-use crate::card::Card;
+use crate::card::Note;
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Deck {
-    pub cards: Vec<Card>,
+    pub cards: Vec<Note>,
 }
 
 impl Deck {
