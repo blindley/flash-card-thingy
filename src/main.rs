@@ -10,7 +10,7 @@ use rocket::form::Form;
 use std::sync::{Arc, Mutex};
 use std::collections::{VecDeque, BTreeMap};
 
-mod card;
+mod note;
 mod deck;
 mod progress;
 

@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use crate::card::Note;
+use crate::note::Note;
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
