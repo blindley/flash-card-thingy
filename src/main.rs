@@ -1,7 +1,10 @@
+#![allow(dead_code)]
+
 #[macro_use] extern crate rocket;
 use rocket::{response::content::RawHtml, State};
 
 use std::sync::{Arc, Mutex};
+use std::collections::{VecDeque};
 
 mod card;
 mod deck;
@@ -11,7 +14,10 @@ use deck::Deck;
 use progress::UserProgress;
 
 struct AppData {
+    pub user_progress_filepath: std::path::PathBuf,
     pub user_progress: UserProgress,
+    pub deck: Deck,
+    pub due_cards: VecDeque<progress::CardId>,
 }
 
 #[launch]
@@ -19,19 +25,55 @@ fn rocket() -> _ {
     let figment = rocket::Config::figment()
          .merge(("port", 8080));
 
-    let mut app_data =
-        AppData {
-            user_progress: UserProgress::load("data/users/sample-user/user-progress.json").unwrap()
+    let user_progress_filepath = "data/users/sample-user/user-progress.json".into();
+
+    let mut user_progress = {
+        UserProgress::load(&user_progress_filepath).unwrap()
+    };
+
+    let deck = {
+        let path = "data/decks/sample.json";
+        Deck::load(path).unwrap()
+    };
+
+    let mut due_cards = VecDeque::new();
+
+    for card in deck.cards.iter() {
+        let uuid = card.get_uuid();
+        let instances = match card.get_field("instances") {
+            None => 1,
+            Some(instance_str) => {
+                // TODO: Introduce some logging here to warn about invalid values
+                match instance_str.parse() {
+                    Err(_) => 1,
+                    Ok(n) => if n < 1 { 1 } else { n },
+                }
+            },
         };
+
+        for instance in 1..=instances {
+            let card_id = progress::CardId { uuid, instance, };
+            let card_progress =
+                user_progress.cards.entry(card_id)
+                .or_insert_with(|| progress::CardProgress::new());
+            if card_progress.due >= chrono::Local::now().date_naive() {
+                due_cards.push_back(card_id);
+            }
+        }
+    }
+
+    let app_data = AppData {
+        user_progress_filepath, user_progress, deck, due_cards,
+    };
 
     let app_data = Arc::new(Mutex::new(app_data));
     rocket::custom(figment)
         .manage(app_data)
-        .mount("/", routes![index, card_by_index])
+        .mount("/", routes![index])
 }
 
 #[get("/")]
-fn index() -> RawHtml<String>
+fn index(app_data: &State<Arc<Mutex<AppData>>>) -> RawHtml<String>
 {
     let name_of_this_app = "pending...";
 
@@ -41,9 +83,25 @@ fn index() -> RawHtml<String>
     lines.push(format!("<head><title>{}</title></head>", name_of_this_app));
     lines.push("<body>".into());
 
-    let url = "/0";
-    let deck_name = "sample-deck";
-    lines.push(format!("<a href=\"{url}\">{deck_name}</a>"));
+    {
+        let app_data = app_data.lock().unwrap();
+        if app_data.due_cards.is_empty() {
+            lines.push("<h1>No cards due</h1>".into());
+        } else {
+            let mut card_found = false;
+            let card_id = app_data.due_cards[0];
+            for card in app_data.deck.cards.iter() {
+                if card.get_uuid() == card_id.uuid {
+                    lines.push(card.to_html(card_id.instance));
+                    card_found = true;
+                    break;
+                }
+            }
+            if !card_found {
+                lines.push("<h1>Error: card not found</h1>".into());
+            }
+        }
+    }
 
     lines.push("</body>".into());
     lines.push("</html>".into());
@@ -54,20 +112,4 @@ fn index() -> RawHtml<String>
         html.push('\n');
     }
     return RawHtml(html)
-}
-
-#[get("/<index>")]
-fn card_by_index(index: usize, app_data: &State<Arc<Mutex<AppData>>>) -> RawHtml<String>
-{
-    let deck_path = "data/decks/sample.json";
-    let deck = Deck::load(deck_path).unwrap();
-
-    if index < deck.cards.len() {
-        let card = &deck.cards[index];
-        let page_content = card.to_html();
-        RawHtml(page_content)
-    } else {
-        let content = "<h1>ERROR: card does not exist</h1>";
-        RawHtml(content.into())
-    }
 }

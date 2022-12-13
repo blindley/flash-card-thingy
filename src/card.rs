@@ -35,7 +35,7 @@ impl Card {
         self.0.get(key)
     }
 
-    pub fn to_javascript_object(&self, variable_name: Option<&str>) -> String
+    pub fn to_javascript_object(&self, variable_name: Option<&str>, instance: u32) -> String
     {
         let mut result = String::new();
 
@@ -44,14 +44,10 @@ impl Card {
         }
 
         result.push('{');
-        let mut is_first = true;
+        result.push_str(&format!("\"instance\":{instance}"));
         for (k, v) in self.0.iter() {
-            if !is_first {
-                result.push(',');
-            }
-
+            result.push(',');
             result.push_str(&format!("\"{k}\":\"{v}\""));
-            is_first = false;
         }
         result.push('}');
 
@@ -62,12 +58,12 @@ impl Card {
         result
     }
 
-    pub fn to_html(&self) -> String
+    pub fn to_html(&self, instance: u32) -> String
     {
         let mut page_content = String::new();
 
         page_content.push_str("<script>\n");
-        page_content.push_str(&self.to_javascript_object(Some("card")));
+        page_content.push_str(&self.to_javascript_object(Some("card"), instance));
         page_content.push_str("</script>\n");
 
         let template = self.get_field("template")
@@ -91,16 +87,16 @@ mod test {
     fn test_to_javascript_object()
     {
         let card = Card::new();
-        assert_eq!(card.to_javascript_object(None), "{}");
+        assert_eq!(card.to_javascript_object(None, 1), r#"{"instance":1}"#);
 
         let mut card = Card::new();
         card.set_field("template", "basic-plus");
         card.set_field("front", "This is the front.");
         card.set_field("back", "This is the back.");
         assert_eq!(
-            card.to_javascript_object(Some("card")),
+            card.to_javascript_object(Some("card"), 1),
             concat!(
-                r#"var card = {"back":"This is the back.","front":"This is the front.","template":"basic-plus"};"#,
+                r#"var card = {"instance":1,"back":"This is the back.","front":"This is the front.","template":"basic-plus"};"#,
                 "\n"
             )
         );
