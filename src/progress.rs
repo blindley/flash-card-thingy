@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 
 use chrono::naive::NaiveDate;
+use std::collections::{VecDeque};
 
 const MAX_STREAK_HISTORY: usize = 8;
 
@@ -15,7 +16,7 @@ pub struct CardProgress {
     pub due: NaiveDate,
     pub interval: i32,
     pub streak: u8,
-    pub streak_history: Vec<u8>,
+    pub streak_history: VecDeque<u8>,
 }
 
 impl CardProgress {
@@ -25,7 +26,26 @@ impl CardProgress {
             due: chrono::Local::now().date_naive(),
             interval: 0,
             streak: 0,
-            streak_history: Vec::new(),
+            streak_history: VecDeque::new(),
+        }
+    }
+
+    pub fn pass(&mut self)
+    {
+        use chrono::naive::Days;
+        self.interval = self.interval * 3 / 2 + 1;
+        self.due = self.due + Days::new(self.interval as u64);
+        self.streak += 1;
+    }
+
+    pub fn fail(&mut self)
+    {
+        self.due = chrono::Local::now().date_naive();
+        self.interval = 0;
+        self.streak_history.push_front(self.streak);
+        self.streak = 0;
+        if self.streak_history.len() > MAX_STREAK_HISTORY {
+            self.streak_history.resize(MAX_STREAK_HISTORY, 0);
         }
     }
 }
