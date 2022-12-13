@@ -1,21 +1,32 @@
 #[macro_use] extern crate rocket;
-use rocket::response::content::RawHtml;
+use rocket::{response::content::RawHtml, State};
+
+use std::sync::{Arc, Mutex};
 
 mod card;
 mod deck;
 mod progress;
 
 use deck::Deck;
+use progress::UserProgress;
 
 struct AppData {
-
+    pub user_progress: UserProgress,
 }
 
 #[launch]
 fn rocket() -> _ {
     let figment = rocket::Config::figment()
          .merge(("port", 8080));
+
+    let mut app_data =
+        AppData {
+            user_progress: UserProgress::load("data/users/sample-user/user-progress.json").unwrap()
+        };
+
+    let app_data = Arc::new(Mutex::new(app_data));
     rocket::custom(figment)
+        .manage(app_data)
         .mount("/", routes![index, card_by_index])
 }
 
@@ -46,7 +57,7 @@ fn index() -> RawHtml<String>
 }
 
 #[get("/<index>")]
-fn card_by_index(index: usize) -> RawHtml<String>
+fn card_by_index(index: usize, app_data: &State<Arc<Mutex<AppData>>>) -> RawHtml<String>
 {
     let deck_path = "data/decks/sample.json";
     let deck = Deck::load(deck_path).unwrap();

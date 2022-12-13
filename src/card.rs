@@ -16,6 +16,12 @@ impl Card {
         Card(fields)
     }
 
+    pub fn get_uuid(&self) -> uuid::Uuid
+    {
+        use std::str::FromStr;
+        uuid::Uuid::from_str(self.0.get("uuid").unwrap().as_str()).unwrap()
+    }
+
     pub fn set_field<K, V>(&mut self, key: K, value: V)
         where K: Into<String>, V: Into<String>
     {
