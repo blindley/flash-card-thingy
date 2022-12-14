@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 
 use chrono::naive::NaiveDate;
 use std::collections::{VecDeque};
+use crate::note::Note;
 
 const MAX_STREAK_HISTORY: usize = 8;
 
@@ -70,5 +71,10 @@ impl UserProgress {
 
         let p = serde_json::from_str(&json_str)?;
         Ok(p)
+    }
+
+    pub fn add_card(&mut self, card_id: CardId) -> &mut CardProgress {
+        self.cards.entry(card_id)
+            .or_insert_with(|| CardProgress::new())
     }
 }

@@ -4,35 +4,43 @@ use std::collections::BTreeMap;
 use std::cmp::Ord;
 
 use serde::{Serialize, Deserialize};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct Note(BTreeMap<String, String>);
+pub struct Note {
+    #[serde(default = "Uuid::nil")]
+    pub uuid: uuid::Uuid,
+
+    #[serde(default = "one")]
+    pub instances: u32,
+
+    #[serde(default = "String::new")]
+    pub template: String,
+
+    #[serde(flatten)]
+    pub fields: BTreeMap<String, String>,
+}
+
+fn one() -> u32 { 1 }
 
 impl Note {
-    pub fn new() -> Note
-    {
-        let fields = BTreeMap::new();
-
-        Note(fields)
-    }
 
     pub fn get_uuid(&self) -> uuid::Uuid
     {
-        use std::str::FromStr;
-        uuid::Uuid::from_str(self.0.get("uuid").unwrap().as_str()).unwrap()
+        self.uuid
     }
 
     pub fn set_field<K, V>(&mut self, key: K, value: V)
         where K: Into<String>, V: Into<String>
     {
-        self.0.insert(key.into(), value.into());
+        self.fields.insert(key.into(), value.into());
     }
 
     pub fn get_field<Q>(&self, key: &Q) -> Option<&String>
         where String: std::borrow::Borrow<Q>,
             Q: Ord + ?Sized
     {
-        self.0.get(key)
+        self.fields.get(key)
     }
 
     pub fn to_javascript_object(&self, variable_name: Option<&str>, instance: u32) -> String
@@ -45,7 +53,7 @@ impl Note {
 
         result.push('{');
         result.push_str(&format!("\"instance\":{instance}"));
-        for (k, v) in self.0.iter() {
+        for (k, v) in self.fields.iter() {
             result.push(',');
             result.push_str(&format!("\"{k}\":\"{v}\""));
         }
@@ -79,26 +87,4 @@ impl Note {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::Note;
 
-    #[test]
-    fn test_to_javascript_object()
-    {
-        let card = Note::new();
-        assert_eq!(card.to_javascript_object(None, 1), r#"{"instance":1}"#);
-
-        let mut card = Note::new();
-        card.set_field("template", "basic-plus");
-        card.set_field("front", "This is the front.");
-        card.set_field("back", "This is the back.");
-        assert_eq!(
-            card.to_javascript_object(Some("card"), 1),
-            concat!(
-                r#"var card = {"instance":1,"back":"This is the back.","front":"This is the front.","template":"basic-plus"};"#,
-                "\n"
-            )
-        );
-    }
-}
